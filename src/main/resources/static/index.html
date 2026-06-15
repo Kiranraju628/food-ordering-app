@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GourmetGo | Premium Online Food Ordering System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Toast Notification Container -->
+        <div id="toast-container"></div>
+
+        <!-- Global Header -->
+        <header id="main-header" class="hidden">
+            <div class="logo">
+                <i class="fa-solid fa-fire-flame-curved logo-icon"></i>
+                <span class="logo-text">Gourmet<span>Go</span></span>
+            </div>
+            <nav id="role-nav"></nav>
+            <div class="header-actions">
+                <!-- Notifications Bell -->
+                <div class="notification-bell" id="bell-btn">
+                    <i class="fa-regular fa-bell"></i>
+                    <span id="notif-badge" class="badge hidden">0</span>
+                    <div id="notif-dropdown" class="dropdown-menu hidden">
+                        <div class="dropdown-header">
+                            <h3>Notifications</h3>
+                            <button id="clear-notif-btn">Clear All</button>
+                        </div>
+                        <div id="notif-list" class="dropdown-list">
+                            <p class="empty-text">No new notifications</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Profile Area -->
+                <div class="profile-area">
+                    <div class="profile-info">
+                        <span id="header-username" class="username">Guest</span>
+                        <span id="header-role" class="user-role">Customer</span>
+                    </div>
+                    <button id="logout-btn" class="icon-btn" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main id="main-content">
+            <!-- Auth Container (Register & Login) -->
+            <section id="auth-view" class="view-section">
+                <div class="auth-card">
+                    <div class="auth-tabs">
+                        <button id="tab-login" class="auth-tab active">Sign In</button>
+                        <button id="tab-register" class="auth-tab">Sign Up</button>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <form id="login-form" class="auth-form">
+                        <div class="auth-header">
+                            <h2>Welcome Back</h2>
+                            <p>Indulge in your favorite flavors, delivered hot.</p>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-regular fa-user"></i> Username</label>
+                            <input type="text" id="login-username" required placeholder="Enter username">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-lock"></i> Password</label>
+                            <input type="password" id="login-password" required placeholder="Enter password">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="register-form" class="auth-form hidden">
+                        <div class="auth-header">
+                            <h2>Join GourmetGo</h2>
+                            <p>Unlock the best restaurants in your city.</p>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label><i class="fa-regular fa-user"></i> Username</label>
+                                <input type="text" id="reg-username" required placeholder="Pick a username">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-regular fa-envelope"></i> Email</label>
+                                <input type="email" id="reg-email" required placeholder="you@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-lock"></i> Password</label>
+                                <input type="password" id="reg-password" required placeholder="Min 6 characters">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-phone"></i> Phone Number</label>
+                                <input type="text" id="reg-phone" placeholder="10-digit number">
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label><i class="fa-solid fa-users-gear"></i> I want to register as a:</label>
+                                <select id="reg-role" class="form-select">
+                                    <option value="CUSTOMER">Customer (Order food)</option>
+                                    <option value="RESTAURANT">Restaurant Owner (Sell food)</option>
+                                    <option value="DELIVERY">Delivery Partner (Deliver food)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Restaurant Specific Fields -->
+                            <div id="restaurant-fields" class="col-span-2 hidden role-fields">
+                                <h3 class="field-section-title">Restaurant Details</h3>
+                                <div class="form-group">
+                                    <label>Restaurant Name</label>
+                                    <input type="text" id="reg-rest-name" placeholder="The Pizza Hub">
+                                </div>
+                                <div class="form-group">
+                                    <label>Restaurant Address</label>
+                                    <input type="text" id="reg-rest-address" placeholder="123 Street, City">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label>Description</label>
+                                    <textarea id="reg-rest-desc" placeholder="Specialty, type of food, timings, etc."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Delivery Specific Fields -->
+                            <div id="delivery-fields" class="col-span-2 hidden role-fields">
+                                <h3 class="field-section-title">Rider Details</h3>
+                                <div class="form-group col-span-2">
+                                    <label>Vehicle Number</label>
+                                    <input type="text" id="reg-rider-vehicle" placeholder="e.g. MH-12-AB-1234">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- CUSTOMER PORTAL -->
+            <section id="customer-view" class="view-section hidden">
+                <div class="dashboard-layout">
+                    <!-- Left Sidebar / Main Flow Area -->
+                    <div class="dashboard-main">
+                        <div class="tabs-header">
+                            <h1>Customer Dashboard</h1>
+                            <div class="portal-tabs">
+                                <button id="tab-cust-rests" class="portal-tab active" onclick="setCustomerSubView('restaurants')"><i class="fa-solid fa-utensils"></i> Restaurants</button>
+                                <button id="tab-cust-history" class="portal-tab" onclick="setCustomerSubView('history')"><i class="fa-solid fa-history"></i> My Orders</button>
+                                <button id="tab-cust-addresses" class="portal-tab" onclick="setCustomerSubView('addresses')"><i class="fa-solid fa-location-dot"></i> Addresses</button>
+                                <button id="tab-cust-track" class="portal-tab hidden" onclick="setCustomerSubView('tracking')"><i class="fa-solid fa-map-location-dot"></i> Track Order</button>
+                            </div>
+                        </div>
+
+                        <!-- Search & Filter Banner -->
+                        <div class="search-banner">
+                            <h1>Hungry? Let's find some food</h1>
+                            <div class="search-bar-wrapper">
+                                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                <input type="text" id="food-search-input" placeholder="Search dish names (e.g. paneer, rolls)...">
+                                <button id="search-clear-btn" class="hidden"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Active View inside Customer Dashboard -->
+                        <div id="customer-sub-view">
+                            <!-- Restaurant List View -->
+                            <div id="restaurant-list-section">
+                                <div class="section-header">
+                                    <h2>Popular Restaurants</h2>
+                                </div>
+                                <div id="restaurants-grid" class="cards-grid">
+                                    <!-- Dynamic Restaurant Cards -->
+                                </div>
+                            </div>
+
+                            <!-- Restaurant Menu View -->
+                            <div id="menu-section" class="hidden">
+                                <div class="menu-back-header">
+                                    <button id="menu-back-btn" class="btn btn-text"><i class="fa-solid fa-arrow-left"></i> Back to Restaurants</button>
+                                </div>
+                                <div id="restaurant-banner" class="restaurant-banner">
+                                    <!-- Dynamic Restaurant Banner Details -->
+                                </div>
+                                <div class="menu-categories" id="menu-categories-container">
+                                    <!-- Dynamic Category Headers -->
+                                </div>
+                                <div id="menu-grid" class="cards-grid">
+                                    <!-- Dynamic Menu Cards -->
+                                </div>
+                            </div>
+
+                            <!-- Order Status Tracking -->
+                            <div id="tracking-section" class="hidden">
+                                <div class="tracking-card">
+                                    <div class="tracking-header">
+                                        <h2>Track Your Order</h2>
+                                        <span id="track-order-id" class="order-badge">#---</span>
+                                    </div>
+                                    <div id="tracking-stepper" class="stepper-wrapper">
+                                        <!-- Dynamic Vertical Stepper -->
+                                    </div>
+                                    <div id="tracking-driver-info" class="driver-info-card hidden">
+                                        <!-- Rider Details -->
+                                    </div>
+                                    <!-- Review Section once delivered -->
+                                    <div id="order-rating-card" class="rating-feedback-card hidden">
+                                        <h3>How was your meal?</h3>
+                                        <p>Your rating helps improve the dining experience.</p>
+                                        <div class="stars" id="star-rating-select">
+                                            <i class="fa-regular fa-star star-btn" data-value="1"></i>
+                                            <i class="fa-regular fa-star star-btn" data-value="2"></i>
+                                            <i class="fa-regular fa-star star-btn" data-value="3"></i>
+                                            <i class="fa-regular fa-star star-btn" data-value="4"></i>
+                                            <i class="fa-regular fa-star star-btn" data-value="5"></i>
+                                        </div>
+                                        <textarea id="rating-comment" placeholder="Add optional comments..."></textarea>
+                                        <button id="submit-rating-btn" class="btn btn-primary">Submit Feedback</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Order History -->
+                            <div id="history-section" class="hidden">
+                                <h2>Your Order History</h2>
+                                <div id="orders-history-list" class="orders-list">
+                                    <!-- Dynamic orders -->
+                                </div>
+                            </div>
+
+                            <!-- Address Management -->
+                            <div id="addresses-section" class="hidden">
+                                <div class="address-header">
+                                    <h2>Manage Addresses</h2>
+                                    <button id="add-address-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Address</button>
+                                </div>
+                                <div id="addresses-grid" class="cards-grid">
+                                    <!-- Dynamic addresses -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar: Cart Area -->
+                    <aside class="dashboard-aside" id="customer-cart-sidebar">
+                        <div class="cart-box">
+                            <div class="cart-header">
+                                <h2>Your Basket</h2>
+                                <button id="clear-cart-btn" class="btn btn-text-danger">Clear</button>
+                            </div>
+                            <div id="cart-items-container" class="cart-items-list">
+                                <div class="empty-cart-state">
+                                    <i class="fa-solid fa-basket-shopping"></i>
+                                    <p>Your cart is empty.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="coupon-section">
+                                <div class="coupon-input-group">
+                                    <input type="text" id="coupon-code" placeholder="Enter coupon code">
+                                    <button id="apply-coupon-btn" class="btn btn-secondary">Apply</button>
+                                </div>
+                                <div id="applied-coupon-msg" class="coupon-success hidden"></div>
+                            </div>
+
+                            <div class="cart-summary">
+                                <div class="summary-line">
+                                    <span>Subtotal</span>
+                                    <span id="cart-subtotal">₹0.00</span>
+                                </div>
+                                <div class="summary-line coupon-line hidden" id="cart-discount-line">
+                                    <span>Discount</span>
+                                    <span id="cart-discount">-₹0.00</span>
+                                </div>
+                                <div class="summary-line total-line">
+                                    <span>Grand Total</span>
+                                    <span id="cart-total">₹0.00</span>
+                                </div>
+                            </div>
+                            <button id="checkout-btn" class="btn btn-primary btn-block btn-lg" disabled>Checkout</button>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <!-- RESTAURANT PORTAL -->
+            <section id="restaurant-view" class="view-section hidden">
+                <div class="dashboard-layout">
+                    <div class="dashboard-main">
+                        <div class="tabs-header">
+                            <h1 id="rest-owner-title">Restaurant Management</h1>
+                            <div class="portal-tabs">
+                                <button id="tab-rest-orders" class="portal-tab active">Incoming Orders</button>
+                                <button id="tab-rest-menu" class="portal-tab">Manage Menu</button>
+                            </div>
+                        </div>
+
+                        <!-- Orders Tab -->
+                        <div id="rest-orders-section">
+                            <h2>Pending Orders</h2>
+                            <div id="rest-orders-list" class="orders-list">
+                                <!-- Dynamic incoming orders -->
+                            </div>
+                        </div>
+
+                        <!-- Menu Tab -->
+                        <div id="rest-menu-section" class="hidden">
+                            <div class="section-header">
+                                <h2>Your Menu Items</h2>
+                                <button id="add-menu-item-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add New Dish</button>
+                            </div>
+                            <div id="rest-menu-grid" class="cards-grid">
+                                <!-- Dynamic menu cards -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DELIVERY PARTNER PORTAL -->
+            <section id="delivery-view" class="view-section hidden">
+                <div class="dashboard-layout">
+                    <div class="dashboard-main">
+                        <div class="tabs-header">
+                            <h1>Delivery Partner Portal</h1>
+                            <div class="portal-tabs">
+                                <button id="tab-del-pending" class="portal-tab active">Available Deliveries</button>
+                                <button id="tab-del-active" class="portal-tab">Active Delivery</button>
+                                <button id="tab-del-history" class="portal-tab">History</button>
+                            </div>
+                        </div>
+
+                        <!-- Pending Delivery requests -->
+                        <div id="del-pending-section">
+                            <h2>Orders Ready for Pickup</h2>
+                            <div id="del-requests-list" class="orders-list">
+                                <!-- Ready to pickup orders -->
+                            </div>
+                        </div>
+
+                        <!-- Active Delivery -->
+                        <div id="del-active-section" class="hidden">
+                            <h2>Current Delivery Job</h2>
+                            <div id="del-active-card-container">
+                                <!-- Active delivery details -->
+                            </div>
+                        </div>
+
+                        <!-- History -->
+                        <div id="del-history-section" class="hidden">
+                            <h2>Your Completed Deliveries</h2>
+                            <div id="del-history-list" class="orders-list">
+                                <!-- Delivery history -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN PORTAL -->
+            <section id="admin-view" class="view-section hidden">
+                <div class="dashboard-layout">
+                    <div class="dashboard-main">
+                        <div class="tabs-header">
+                            <h1>Admin Control Panel</h1>
+                            <div class="portal-tabs">
+                                <button id="tab-admin-stats" class="portal-tab active">Global Reports</button>
+                                <button id="tab-admin-users" class="portal-tab">Manage Users</button>
+                                <button id="tab-admin-rests" class="portal-tab">Approvals</button>
+                                <button id="tab-admin-orders" class="portal-tab">Orders</button>
+                                <button id="tab-admin-coupons" class="portal-tab">Coupons</button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Stats/Reports -->
+                        <div id="admin-stats-section">
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <i class="fa-solid fa-indian-rupee-sign stat-icon icon-cyan"></i>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Revenue</span>
+                                        <h3 id="admin-stat-revenue">₹0.00</h3>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fa-solid fa-bag-shopping stat-icon icon-orange"></i>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Orders</span>
+                                        <h3 id="admin-stat-orders">0</h3>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fa-solid fa-users stat-icon icon-blue"></i>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Registered Users</span>
+                                        <h3 id="admin-stat-users">0</h3>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fa-solid fa-store stat-icon icon-green"></i>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Approved Stores</span>
+                                        <h3 id="admin-stat-restaurants">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="reports-container">
+                                <h2>Business Growth Summary</h2>
+                                <div class="reports-grid">
+                                    <div class="report-box">
+                                        <h3>User Roles Breakdown</h3>
+                                        <ul class="report-list">
+                                            <li>Customers: <strong id="rep-customers">0</strong></li>
+                                            <li>Restaurant Owners: <strong id="rep-owners">0</strong></li>
+                                            <li>Delivery Riders: <strong id="rep-riders">0</strong></li>
+                                        </ul>
+                                    </div>
+                                    <div class="report-box">
+                                        <h3>Store Validation Stats</h3>
+                                        <ul class="report-list">
+                                            <li>Active Stores: <strong id="rep-active-stores">0</strong></li>
+                                            <li>Awaiting Approval: <strong id="rep-pending-stores">0</strong></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Users -->
+                        <div id="admin-users-section" class="hidden">
+                            <h2>Manage Registered Accounts</h2>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Role(s)</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-users-table-body">
+                                        <!-- Dynamic users table rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Admin Approvals -->
+                        <div id="admin-rests-section" class="hidden">
+                            <h2>Restaurant Profiles Pending Approval</h2>
+                            <div id="admin-pending-rests-list" class="orders-list">
+                                <!-- Dynamic restaurants with approve action -->
+                            </div>
+                        </div>
+
+                        <!-- Admin Orders -->
+                        <div id="admin-orders-section" class="hidden">
+                            <h2>Global System Orders</h2>
+                            <div id="admin-orders-list" class="orders-list">
+                                <!-- Dynamic list of all orders -->
+                            </div>
+                        </div>
+
+                        <!-- Admin Coupons -->
+                        <div id="admin-coupons-section" class="hidden">
+                            <div class="split-layout">
+                                <div class="split-side-form">
+                                    <h3>Create New Coupon</h3>
+                                    <form id="coupon-form">
+                                        <div class="form-group">
+                                            <label>Coupon Code</label>
+                                            <input type="text" id="cop-code" required placeholder="WELCOME30" style="text-transform: uppercase;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Discount Percentage (%)</label>
+                                            <input type="number" id="cop-pct" required min="1" max="100" placeholder="30">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Max Cap (₹)</label>
+                                            <input type="number" id="cop-max" placeholder="e.g. 100">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Expiry Date</label>
+                                            <input type="date" id="cop-expiry" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-block">Generate Coupon</button>
+                                    </form>
+                                </div>
+                                <div class="split-main">
+                                    <h3>Active Coupons</h3>
+                                    <div class="table-responsive">
+                                        <table class="admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Code</th>
+                                                    <th>Discount %</th>
+                                                    <th>Max Cap</th>
+                                                    <th>Expiry Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="admin-coupons-table-body">
+                                                <!-- Dynamic coupons list -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- GLOBAL MODALS -->
+
+        <!-- Checkout / Place Order Modal -->
+        <div id="checkout-modal" class="modal-wrapper hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>Checkout Options</h2>
+                    <button class="modal-close-btn" onclick="document.getElementById('checkout-modal').classList.add('hidden')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-location-dot"></i> Select Delivery Address</label>
+                        <select id="checkout-address-select" class="form-select"></select>
+                        <p class="small-text">Don't see your address? Add one in the "Manage Addresses" tab in your profile.</p>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-credit-card"></i> Payment Method</label>
+                        <div class="payment-options">
+                            <label class="payment-radio">
+                                <input type="radio" name="pay-method" value="COD" checked>
+                                <span>Cash on Delivery (COD)</span>
+                            </label>
+                            <label class="payment-radio">
+                                <input type="radio" name="pay-method" value="CARD">
+                                <span>Credit / Debit Card (Simulated)</span>
+                            </label>
+                            <label class="payment-radio">
+                                <input type="radio" name="pay-method" value="UPI">
+                                <span>UPI / Netbanking (Simulated)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="place-order-confirm-btn" class="btn btn-primary btn-block btn-lg">Place Order</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Menu Item Modal (Restaurant) -->
+        <div id="menu-modal" class="modal-wrapper hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2 id="menu-modal-title">Add Menu Item</h2>
+                    <button class="modal-close-btn" onclick="document.getElementById('menu-modal').classList.add('hidden')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="menu-item-form">
+                        <input type="hidden" id="menu-item-id">
+                        <div class="form-group">
+                            <label>Dish Name</label>
+                            <input type="text" id="menu-item-name" required placeholder="e.g. Garlic Naan">
+                        </div>
+                        <div class="form-group">
+                            <label>Price (₹)</label>
+                            <input type="number" id="menu-item-price" required placeholder="e.g. 80">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="menu-item-category" class="form-select" required>
+                                <option value="1">Starters</option>
+                                <option value="2">Main Course</option>
+                                <option value="3">Desserts</option>
+                                <option value="4">Beverages</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL</label>
+                            <input type="text" id="menu-item-image" placeholder="Image URL link...">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="menu-item-desc" required placeholder="Describe ingredients, taste, or size..."></textarea>
+                        </div>
+                        <div class="form-group row-align" id="menu-item-available-group">
+                            <input type="checkbox" id="menu-item-available" checked>
+                            <label for="menu-item-available">Available (Customer can see it)</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Save Dish</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Address Modal -->
+        <div id="address-modal" class="modal-wrapper hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>Add New Address</h2>
+                    <button class="modal-close-btn" onclick="document.getElementById('address-modal').classList.add('hidden')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="address-form">
+                        <div class="form-group">
+                            <label>Street Address</label>
+                            <input type="text" id="addr-street" required placeholder="Flat No, Apartment Name, Street">
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" id="addr-city" required placeholder="Kolkata">
+                            </div>
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" id="addr-state" required placeholder="West Bengal">
+                            </div>
+                            <div class="form-group">
+                                <label>Zip Code</label>
+                                <input type="text" id="addr-zip" required placeholder="700016">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" id="addr-country" value="India" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Save Address</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="js/app.js"></script>
+</body>
+</html>

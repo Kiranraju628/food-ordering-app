@@ -1,0 +1,12 @@
+package com.foodapp.repository;
+
+import com.foodapp.entity.Cart;
+import com.foodapp.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface CartRepository extends JpaRepository<Cart, Long> {
+    Optional<Cart> findByUser(User user);
+}
