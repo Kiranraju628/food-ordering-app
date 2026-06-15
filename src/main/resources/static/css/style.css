@@ -1081,3 +1081,72 @@ main {
 .hidden {
     display: none !important;
 }
+
+/* ==========================================================================
+   Premium Portal Tabs
+   ========================================================================== */
+.tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.portal-tabs {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(8px);
+    width: fit-content;
+}
+
+.portal-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.portal-tab i {
+    font-size: 14px;
+}
+
+.portal-tab:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.portal-tab.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary) 0%, #FF5100 100%);
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+@media (max-width: 768px) {
+    .tabs-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .portal-tabs {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+

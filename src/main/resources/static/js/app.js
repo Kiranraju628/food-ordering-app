@@ -37,8 +37,8 @@ async function apiCall(endpoint, method = "GET", body = null) {
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, config);
         
-        // Handle 401 Unauthorized (invalid/expired token)
-        if (response.status === 401) {
+        // Handle 401 Unauthorized / 403 Forbidden (invalid/expired token)
+        if (response.status === 401 || response.status === 403) {
             showToast("Session expired. Please log in again.", "danger");
             logout();
             throw new Error("Unauthorized");
@@ -109,7 +109,7 @@ function selectRole(role) {
     localStorage.setItem("activeRole", role);
 
     document.getElementById("main-header").classList.remove("hidden");
-    document.getElementById("header-username").innerText = state.user.username;
+    document.getElementById("header-username").innerText = (state.user && state.user.username) ? state.user.username : "Guest";
     
     let roleLabel = "Customer";
     if (role === "ROLE_ADMIN") roleLabel = "Admin";
@@ -312,6 +312,39 @@ function setCustomerSubView(subview) {
     document.getElementById("history-section").classList.add("hidden");
     document.getElementById("addresses-section").classList.add("hidden");
     document.getElementById("customer-cart-sidebar").classList.remove("hidden");
+
+    // Track Tab Visibility Toggle
+    const trackTab = document.getElementById("tab-cust-track");
+    if (state.currentTrackedOrderId) {
+        trackTab.classList.remove("hidden");
+    } else {
+        trackTab.classList.add("hidden");
+    }
+
+    // Toggle active classes on Customer Portal tabs
+    document.querySelectorAll("#customer-view .portal-tab").forEach(t => t.classList.remove("active"));
+    if (subview === "restaurants" || subview === "menu") {
+        document.getElementById("tab-cust-rests").classList.add("active");
+    } else if (subview === "tracking") {
+        trackTab.classList.add("active");
+    } else if (subview === "history") {
+        document.getElementById("tab-cust-history").classList.add("active");
+    } else if (subview === "addresses") {
+        document.getElementById("tab-cust-addresses").classList.add("active");
+    }
+
+    // Sync header navigation links
+    const navLinks = document.querySelectorAll("#role-nav .nav-link");
+    navLinks.forEach(link => {
+        link.classList.remove("active");
+        const onclickText = link.getAttribute("onclick");
+        if (onclickText) {
+            const targetSubview = subview === "menu" ? "restaurants" : subview;
+            if (onclickText.includes(`'${targetSubview}'`)) {
+                link.classList.add("active");
+            }
+        }
+    });
 
     if (subview === "restaurants") {
         document.getElementById("restaurant-list-section").classList.remove("hidden");
@@ -989,7 +1022,7 @@ document.getElementById("address-form").addEventListener("submit", async (e) => 
 // RESTAURANT PORTAL FLOW
 // ==========================================================================
 function setRestaurantTab(tab) {
-    document.querySelectorAll(".portal-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll("#restaurant-view .portal-tab").forEach(t => t.classList.remove("active"));
     document.getElementById("rest-orders-section").classList.add("hidden");
     document.getElementById("rest-menu-section").classList.add("hidden");
 
@@ -1199,7 +1232,7 @@ async function deleteMenuItem(itemId) {
 // DELIVERY PARTNER PORTAL FLOW
 // ==========================================================================
 function setDeliveryTab(tab) {
-    document.querySelectorAll(".portal-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll("#delivery-view .portal-tab").forEach(t => t.classList.remove("active"));
     document.getElementById("del-pending-section").classList.add("hidden");
     document.getElementById("del-active-section").classList.add("hidden");
     document.getElementById("del-history-section").classList.add("hidden");
@@ -1388,7 +1421,7 @@ async function loadDeliveryHistory() {
 // ADMIN PORTAL FLOW
 // ==========================================================================
 function setAdminTab(tab) {
-    document.querySelectorAll(".portal-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll("#admin-view .portal-tab").forEach(t => t.classList.remove("active"));
     document.getElementById("admin-stats-section").classList.add("hidden");
     document.getElementById("admin-users-section").classList.add("hidden");
     document.getElementById("admin-rests-section").classList.add("hidden");
@@ -1722,5 +1755,9 @@ document.getElementById("clear-notif-btn").addEventListener("click", (e) => {
 
 // Set default initial view on load
 window.addEventListener("DOMContentLoaded", () => {
-    switchView();
+    if (state.token && state.activeRole) {
+        selectRole(state.activeRole);
+    } else {
+        switchView();
+    }
 });
