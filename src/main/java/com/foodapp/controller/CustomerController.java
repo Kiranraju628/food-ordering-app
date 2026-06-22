@@ -204,6 +204,7 @@ public class CustomerController {
                 .order(savedOrder)
                 .paymentMethod(method)
                 .status(status)
+                .upiId(request.getUpiId())
                 .transactionId(UUID.randomUUID().toString())
                 .build();
         paymentRepository.save(payment);

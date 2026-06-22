@@ -1,5 +1,5 @@
 // ==========================================================================
-// GourmetGo Frontend Application Engine
+// QuickBite Frontend Application Engine
 // ==========================================================================
 
 const API_BASE = "/api";
@@ -738,6 +738,18 @@ document.getElementById("checkout-btn").addEventListener("click", async () => {
     }
 });
 
+// Toggle UPI details based on selection
+document.addEventListener("change", (e) => {
+    if (e.target && e.target.name === "pay-method") {
+        const upiGroup = document.getElementById("upi-details-group");
+        if (e.target.value === "UPI") {
+            upiGroup.classList.remove("hidden");
+        } else {
+            upiGroup.classList.add("hidden");
+        }
+    }
+});
+
 document.getElementById("place-order-confirm-btn").addEventListener("click", async () => {
     const addressSelect = document.getElementById("checkout-address-select");
     const addressVal = addressSelect.value;
@@ -748,27 +760,92 @@ document.getElementById("place-order-confirm-btn").addEventListener("click", asy
     }
 
     const payMethod = document.querySelector('input[name="pay-method"]:checked').value;
+    let upiIdVal = "";
+
+    if (payMethod === "UPI") {
+        upiIdVal = document.getElementById("upi-id-input").value.trim();
+        if (!upiIdVal || !upiIdVal.includes("@")) {
+            showToast("Please enter a valid UPI ID (e.g. username@upi)", "warning");
+            return;
+        }
+    }
     
-    const payload = {
-        paymentMethod: payMethod,
-        deliveryAddress: addressVal,
-        couponCode: state.cart.couponCode
+    const executeCheckout = async () => {
+        const payload = {
+            paymentMethod: payMethod,
+            deliveryAddress: addressVal,
+            couponCode: state.cart.couponCode,
+            upiId: upiIdVal || null
+        };
+
+        try {
+            const orderResult = await apiCall("/customer/checkout", "POST", payload);
+            showToast("Order placed successfully!", "success");
+            document.getElementById("checkout-modal").classList.add("hidden");
+            
+            // Reset Cart state
+            state.cart = { items: [], subTotal: 0.0, discount: 0.0, couponCode: null };
+            document.getElementById("coupon-code").value = "";
+            document.getElementById("upi-id-input").value = "";
+            
+            // Navigate to tracking
+            state.currentTrackedOrderId = orderResult.orderId;
+            setCustomerSubView("tracking");
+        } catch (err) {
+            showToast(err.message || "Failed to place order", "danger");
+        }
     };
 
-    try {
-        const orderResult = await apiCall("/customer/checkout", "POST", payload);
-        showToast("Order placed successfully! Redirecting to tracking...", "success");
+    if (payMethod === "COD") {
+        await executeCheckout();
+    } else {
+        // Simulated Payment gateway authorization
+        const pModal = document.getElementById("payment-modal");
+        const loadingState = document.getElementById("payment-loading-state");
+        const successState = document.getElementById("payment-success-state");
+        const loadingMsg = document.getElementById("payment-loading-msg");
+
+        loadingState.classList.remove("hidden");
+        successState.classList.add("hidden");
+        pModal.classList.remove("hidden");
+        
+        // Hide checkout options modal
         document.getElementById("checkout-modal").classList.add("hidden");
-        
-        // Reset Cart state
-        state.cart = { items: [], subTotal: 0.0, discount: 0.0, couponCode: null };
-        document.getElementById("coupon-code").value = "";
-        
-        // Navigate to tracking
-        state.currentTrackedOrderId = orderResult.orderId;
-        setCustomerSubView("tracking");
-    } catch (err) {
-        showToast(err.message || "Failed to place order", "danger");
+        loadingMsg.innerText = "Connecting to secure payment gateway...";
+
+        const finalTotal = Math.max(0, state.cart.subTotal - state.cart.discount);
+
+        setTimeout(() => {
+            if (payMethod === "UPI") {
+                loadingMsg.innerText = `Requesting ₹${finalTotal.toFixed(2)} from UPI VPA: ${upiIdVal}...`;
+            } else {
+                loadingMsg.innerText = `Authorizing ₹${finalTotal.toFixed(2)} via Credit/Debit Card...`;
+            }
+
+            setTimeout(() => {
+                loadingState.classList.add("hidden");
+                successState.classList.remove("hidden");
+
+                document.getElementById("lbl-pay-method").innerText = payMethod === "UPI" ? "UPI / Netbanking" : "Credit/Debit Card";
+                if (payMethod === "UPI") {
+                    document.getElementById("lbl-pay-upi").innerText = upiIdVal;
+                    document.getElementById("lbl-upi-group").classList.remove("hidden");
+                } else {
+                    document.getElementById("lbl-upi-group").classList.add("hidden");
+                }
+                document.getElementById("lbl-pay-amount").innerText = `₹${finalTotal.toFixed(2)}`;
+
+                const txnId = "TXN-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+                document.getElementById("lbl-pay-txnid").innerText = txnId;
+
+                setTimeout(async () => {
+                    pModal.classList.add("hidden");
+                    await executeCheckout();
+                }, 2000);
+
+            }, 1500);
+
+        }, 1000);
     }
 });
 
@@ -1201,17 +1278,31 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
     };
 
     try {
-        if (itemId) {
-            // Update
-            await apiCall(`/restaurant/menu/${itemId}/update?categoryId=${catId}`, "PUT", payload);
-            showToast("Dish details updated!", "success");
+        if (state.activeRole === "ROLE_ADMIN") {
+            if (itemId) {
+                await apiCall(`/admin/restaurants/menu/${itemId}?categoryId=${catId}`, "PUT", payload);
+                showToast("Dish details updated by Admin!", "success");
+            } else {
+                const selectedRestId = document.getElementById("admin-rest-select").value;
+                await apiCall(`/admin/restaurants/${selectedRestId}/menu?categoryId=${catId}`, "POST", payload);
+                showToast("New dish added by Admin!", "success");
+            }
+            document.getElementById("menu-modal").classList.add("hidden");
+            const selectedRestId = document.getElementById("admin-rest-select").value;
+            loadAdminMenuForRestaurant(selectedRestId);
         } else {
-            // Add
-            await apiCall(`/restaurant/menu/add?categoryId=${catId}`, "POST", payload);
-            showToast("New dish added to menu!", "success");
+            if (itemId) {
+                // Update
+                await apiCall(`/restaurant/menu/${itemId}/update?categoryId=${catId}`, "PUT", payload);
+                showToast("Dish details updated!", "success");
+            } else {
+                // Add
+                await apiCall(`/restaurant/menu/add?categoryId=${catId}`, "POST", payload);
+                showToast("New dish added to menu!", "success");
+            }
+            document.getElementById("menu-modal").classList.add("hidden");
+            loadRestaurantMenu();
         }
-        document.getElementById("menu-modal").classList.add("hidden");
-        loadRestaurantMenu();
     } catch (err) {
         showToast("Failed to save menu item", "danger");
     }
@@ -1427,6 +1518,8 @@ function setAdminTab(tab) {
     document.getElementById("admin-rests-section").classList.add("hidden");
     document.getElementById("admin-orders-section").classList.add("hidden");
     document.getElementById("admin-coupons-section").classList.add("hidden");
+    document.getElementById("admin-manage-rests-section").classList.add("hidden");
+    document.getElementById("admin-manage-menu-section").classList.add("hidden");
 
     if (tab === "stats") {
         document.getElementById("tab-admin-stats").classList.add("active");
@@ -1440,6 +1533,14 @@ function setAdminTab(tab) {
         document.getElementById("tab-admin-rests").classList.add("active");
         document.getElementById("admin-rests-section").classList.remove("hidden");
         loadAdminPendingRestaurants();
+    } else if (tab === "manage-rests") {
+        document.getElementById("tab-admin-manage-rests").classList.add("active");
+        document.getElementById("admin-manage-rests-section").classList.remove("hidden");
+        loadAdminAllRestaurants();
+    } else if (tab === "manage-menu") {
+        document.getElementById("tab-admin-manage-menu").classList.add("active");
+        document.getElementById("admin-manage-menu-section").classList.remove("hidden");
+        loadAdminRestaurantsDropdown();
     } else if (tab === "orders") {
         document.getElementById("tab-admin-orders").classList.add("active");
         document.getElementById("admin-orders-section").classList.remove("hidden");
@@ -1454,6 +1555,8 @@ function setAdminTab(tab) {
 document.getElementById("tab-admin-stats").addEventListener("click", () => setAdminTab("stats"));
 document.getElementById("tab-admin-users").addEventListener("click", () => setAdminTab("users"));
 document.getElementById("tab-admin-rests").addEventListener("click", () => setAdminTab("rests"));
+document.getElementById("tab-admin-manage-rests").addEventListener("click", () => setAdminTab("manage-rests"));
+document.getElementById("tab-admin-manage-menu").addEventListener("click", () => setAdminTab("manage-menu"));
 document.getElementById("tab-admin-orders").addEventListener("click", () => setAdminTab("orders"));
 document.getElementById("tab-admin-coupons").addEventListener("click", () => setAdminTab("coupons"));
 
@@ -1587,11 +1690,20 @@ async function loadAdminOrders() {
             let statusColor = "var(--text-muted)";
             if (o.status === "DELIVERED") statusColor = "var(--success)";
             else if (o.status === "CANCELLED") statusColor = "var(--danger)";
+            else if (o.status === "OUT_FOR_DELIVERY") statusColor = "var(--accent-cyan)";
 
             let cancelBtnHtml = "";
             if (o.status !== "DELIVERED" && o.status !== "CANCELLED") {
                 cancelBtnHtml = `<button class="btn btn-text-danger" onclick="cancelOrder(${o.id})" style="padding:4px 8px; font-size:12px;">Cancel Order</button>`;
             }
+
+            const statuses = ["CREATED", "ACCEPTED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+            const selectOptions = statuses.map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join("");
+            const statusSelectHtml = `
+                <select class="form-select" onchange="changeOrderStatusAdmin(${o.id}, this.value)" style="padding:4px 10px; font-size:12px; height:auto; width:auto; display:inline-block; background:var(--bg-secondary); color:var(--text-color); border-color:${statusColor}; border-radius:4px; font-weight:700;">
+                    ${selectOptions}
+                </select>
+            `;
 
             const card = document.createElement("div");
             card.className = "glass-card";
@@ -1606,9 +1718,7 @@ async function loadAdminOrders() {
                     <div style="text-align: right;">
                         <h4 style="color:var(--accent-cyan); font-size:18px;">₹${o.totalAmount.toFixed(2)}</h4>
                         <div style="margin-top:5px; display:flex; align-items:center; gap:10px; justify-content: flex-end;">
-                            <span style="font-size:10px; font-weight:700; color:${statusColor}; border:1px solid ${statusColor}; padding:2px 6px; border-radius:4px;">
-                                ${o.status}
-                            </span>
+                            ${statusSelectHtml}
                             ${cancelBtnHtml}
                         </div>
                     </div>
@@ -1618,6 +1728,17 @@ async function loadAdminOrders() {
         });
     } catch (err) {
         showToast("Failed to load global orders list", "danger");
+    }
+}
+
+async function changeOrderStatusAdmin(orderId, nextStatus) {
+    try {
+        await apiCall(`/admin/orders/${orderId}/status?status=${nextStatus}`, "PUT");
+        showToast(`Order #${orderId} status updated to ${nextStatus}`, "success");
+        loadAdminOrders();
+    } catch (err) {
+        showToast("Failed to update order status", "danger");
+        loadAdminOrders();
     }
 }
 
@@ -1761,3 +1882,228 @@ window.addEventListener("DOMContentLoaded", () => {
         switchView();
     }
 });
+
+// ==========================================================================
+// ADMIN PORTAL EXTENSIONS
+// ==========================================================================
+
+// 1. Manage Restaurants
+async function loadAdminAllRestaurants() {
+    try {
+        const rests = await apiCall("/admin/restaurants");
+        state.adminRestaurants = rests;
+        const tbody = document.getElementById("admin-rests-table-body");
+        tbody.innerHTML = "";
+
+        if (rests.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='7' class='empty-text' style='text-align:center;'>No restaurants found in system.</td></tr>";
+            return;
+        }
+
+        rests.forEach(r => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${r.id}</td>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.owner ? r.owner.username : 'N/A'}</td>
+                <td>${r.phone || 'N/A'}</td>
+                <td>${r.address}</td>
+                <td>
+                    <span style="color: ${r.approved ? 'var(--success)' : 'var(--warning)'}; font-weight:700;">
+                        ${r.approved ? 'APPROVED' : 'PENDING'}
+                    </span>
+                </td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-secondary" onclick="openAdminEditRestaurantModal(${r.id})" style="padding:4px 8px; font-size:11px;">Edit</button>
+                        <button class="btn btn-text-danger" onclick="deleteRestaurantAdmin(${r.id})" style="padding:4px 8px; font-size:11px;"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        showToast("Failed to load restaurants", "danger");
+    }
+}
+
+function openAdminAddRestaurantModal() {
+    document.getElementById("admin-rest-modal-title").innerText = "Add New Restaurant";
+    document.getElementById("admin-rest-id").value = "";
+    document.getElementById("admin-restaurant-form").reset();
+    document.getElementById("admin-rest-approved-group").classList.add("hidden");
+    document.getElementById("admin-restaurant-modal").classList.remove("hidden");
+}
+
+function openAdminEditRestaurantModal(id) {
+    const rest = state.adminRestaurants.find(r => r.id === id);
+    if (!rest) return;
+
+    document.getElementById("admin-rest-modal-title").innerText = "Edit Restaurant Details";
+    document.getElementById("admin-rest-id").value = rest.id;
+    document.getElementById("admin-rest-name").value = rest.name;
+    document.getElementById("admin-rest-owner").value = rest.owner ? rest.owner.username : "";
+    document.getElementById("admin-rest-phone").value = rest.phone || "";
+    document.getElementById("admin-rest-address").value = rest.address;
+    document.getElementById("admin-rest-image").value = rest.imageUrl || "";
+    document.getElementById("admin-rest-desc").value = rest.description || "";
+    document.getElementById("admin-rest-approved").checked = rest.approved;
+    document.getElementById("admin-rest-approved-group").classList.remove("hidden");
+
+    document.getElementById("admin-restaurant-modal").classList.remove("hidden");
+}
+
+document.getElementById("admin-add-rest-btn").addEventListener("click", openAdminAddRestaurantModal);
+
+document.getElementById("admin-restaurant-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("admin-rest-id").value;
+    const payload = {
+        name: document.getElementById("admin-rest-name").value.trim(),
+        ownerUsername: document.getElementById("admin-rest-owner").value.trim(),
+        phone: document.getElementById("admin-rest-phone").value.trim(),
+        address: document.getElementById("admin-rest-address").value.trim(),
+        imageUrl: document.getElementById("admin-rest-image").value.trim(),
+        description: document.getElementById("admin-rest-desc").value.trim(),
+        approved: document.getElementById("admin-rest-approved").checked.toString()
+    };
+
+    try {
+        if (id) {
+            await apiCall(`/admin/restaurants/${id}`, "PUT", payload);
+            showToast("Restaurant updated successfully!", "success");
+        } else {
+            await apiCall("/admin/restaurants", "POST", payload);
+            showToast("Restaurant profile and Owner account created!", "success");
+        }
+        document.getElementById("admin-restaurant-modal").classList.add("hidden");
+        loadAdminAllRestaurants();
+    } catch (err) {
+        showToast(err.message || "Failed to save restaurant", "danger");
+    }
+});
+
+async function deleteRestaurantAdmin(id) {
+    if (!confirm("Are you sure you want to delete this restaurant? This will also delete all of its menu items!")) return;
+    try {
+        await apiCall(`/admin/restaurants/${id}`, "DELETE");
+        showToast("Restaurant deleted successfully", "success");
+        loadAdminAllRestaurants();
+    } catch (err) {
+        showToast("Failed to delete restaurant", "danger");
+    }
+}
+
+// 2. Manage Menus (Admin)
+async function loadAdminRestaurantsDropdown() {
+    try {
+        const rests = await apiCall("/admin/restaurants");
+        const select = document.getElementById("admin-rest-select");
+        select.innerHTML = '<option value="">-- Select Restaurant --</option>';
+
+        rests.forEach(r => {
+            select.innerHTML += `<option value="${r.id}">${r.name} (${r.approved ? 'Active' : 'Pending'})</option>`;
+        });
+
+        // Trigger change handling
+        document.getElementById("admin-add-dish-btn").disabled = true;
+        document.getElementById("admin-menu-grid").innerHTML = "<p class='empty-text'>Please select a restaurant to manage its menu.</p>";
+    } catch (err) {
+        showToast("Failed to load restaurants list", "danger");
+    }
+}
+
+document.getElementById("admin-rest-select").addEventListener("change", (e) => {
+    const val = e.target.value;
+    const addBtn = document.getElementById("admin-add-dish-btn");
+    if (val) {
+        addBtn.disabled = false;
+        loadAdminMenuForRestaurant(val);
+    } else {
+        addBtn.disabled = true;
+        document.getElementById("admin-menu-grid").innerHTML = "<p class='empty-text'>Please select a restaurant to manage its menu.</p>";
+    }
+});
+
+async function loadAdminMenuForRestaurant(restId) {
+    try {
+        const menu = await apiCall(`/admin/restaurants/${restId}/menu`);
+        state.adminMenu = menu;
+        const grid = document.getElementById("admin-menu-grid");
+        grid.innerHTML = "";
+
+        if (menu.length === 0) {
+            grid.innerHTML = "<p class='empty-text'>This restaurant has no menu items yet. Add some below!</p>";
+            return;
+        }
+
+        menu.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "card-item";
+            card.innerHTML = `
+                <div class="card-img-wrapper">
+                    <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500'}" class="card-img" alt="${item.name}">
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">${item.name}</h3>
+                    <p class="card-desc">${item.description}</p>
+                    <div style="margin: 5px 0;">
+                        <span class="rating-badge" style="font-size:10px; background:var(--bg-secondary); color:var(--text-muted); border:1px solid var(--border-color)">
+                            ${item.category.name}
+                        </span>
+                        <span class="rating-badge" style="font-size:10px; background:${item.available ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 23, 68, 0.15)'}; color:${item.available ? 'var(--success)' : 'var(--danger)'};">
+                            ${item.available ? 'Available' : 'Unavailable'}
+                        </span>
+                    </div>
+                    <div class="card-footer">
+                        <span class="card-price">₹${item.price}</span>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-secondary" onclick="openAdminEditMenuModal(${item.id})" style="padding: 6px 12px; font-size:12px;">Edit</button>
+                            <button class="btn btn-text-danger" onclick="deleteMenuItemAdmin(${item.id})" style="padding: 6px 12px; font-size:12px;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        showToast("Failed to load restaurant menu", "danger");
+    }
+}
+
+document.getElementById("admin-add-dish-btn").addEventListener("click", () => {
+    document.getElementById("menu-modal-title").innerText = "Add Dish (Admin)";
+    document.getElementById("menu-item-id").value = "";
+    document.getElementById("menu-item-form").reset();
+    document.getElementById("menu-item-available-group").classList.add("hidden");
+    document.getElementById("menu-modal").classList.remove("hidden");
+});
+
+function openAdminEditMenuModal(itemId) {
+    const item = state.adminMenu.find(i => i.id === itemId);
+    if (!item) return;
+
+    document.getElementById("menu-modal-title").innerText = "Edit Dish Details (Admin)";
+    document.getElementById("menu-item-id").value = item.id;
+    document.getElementById("menu-item-name").value = item.name;
+    document.getElementById("menu-item-price").value = item.price;
+    document.getElementById("menu-item-category").value = item.category.id;
+    document.getElementById("menu-item-image").value = item.imageUrl || "";
+    document.getElementById("menu-item-desc").value = item.description;
+    document.getElementById("menu-item-available").checked = item.available;
+    document.getElementById("menu-item-available-group").classList.remove("hidden");
+
+    document.getElementById("menu-modal").classList.remove("hidden");
+}
+
+async function deleteMenuItemAdmin(itemId) {
+    if (!confirm("Are you sure you want to delete this menu item?")) return;
+    try {
+        await apiCall(`/admin/restaurants/menu/${itemId}`, "DELETE");
+        showToast("Dish deleted by Admin", "success");
+        const selectedRestId = document.getElementById("admin-rest-select").value;
+        loadAdminMenuForRestaurant(selectedRestId);
+    } catch (err) {
+        showToast("Failed to delete dish", "danger");
+    }
+}
