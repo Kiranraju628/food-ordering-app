@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GourmetGo | Premium Online Food Ordering System</title>
+    <title>QuickBite | Premium Online Food Ordering System</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
         <header id="main-header" class="hidden">
             <div class="logo">
                 <i class="fa-solid fa-fire-flame-curved logo-icon"></i>
-                <span class="logo-text">Gourmet<span>Go</span></span>
+                <span class="logo-text">Quick<span>Bite</span></span>
             </div>
             <nav id="role-nav"></nav>
             <div class="header-actions">
@@ -83,7 +83,7 @@
                     <!-- Register Form -->
                     <form id="register-form" class="auth-form hidden">
                         <div class="auth-header">
-                            <h2>Join GourmetGo</h2>
+                            <h2>Join QuickBite</h2>
                             <p>Unlock the best restaurants in your city.</p>
                         </div>
                         <div class="form-grid">
@@ -373,6 +373,8 @@
                                 <button id="tab-admin-stats" class="portal-tab active">Global Reports</button>
                                 <button id="tab-admin-users" class="portal-tab">Manage Users</button>
                                 <button id="tab-admin-rests" class="portal-tab">Approvals</button>
+                                <button id="tab-admin-manage-rests" class="portal-tab">Restaurants</button>
+                                <button id="tab-admin-manage-menu" class="portal-tab">Menus</button>
                                 <button id="tab-admin-orders" class="portal-tab">Orders</button>
                                 <button id="tab-admin-coupons" class="portal-tab">Coupons</button>
                             </div>
@@ -517,6 +519,48 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Admin Manage Restaurants -->
+                        <div id="admin-manage-rests-section" class="hidden">
+                            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                                <h2>Manage Restaurants</h2>
+                                <button id="admin-add-rest-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Restaurant</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Owner</th>
+                                            <th>Phone</th>
+                                            <th>Address</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-rests-table-body">
+                                        <!-- Dynamic restaurants list -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Admin Manage Menu Items -->
+                        <div id="admin-manage-menu-section" class="hidden">
+                            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap: 15px;">
+                                <div style="display:flex; align-items:center; gap:15px;">
+                                    <h2>Manage Menus</h2>
+                                    <select id="admin-rest-select" class="form-select" style="min-width: 250px; background:var(--bg-secondary); color:var(--text-color); border-color:var(--border-color);">
+                                        <option value="">-- Select Restaurant --</option>
+                                    </select>
+                                </div>
+                                <button id="admin-add-dish-btn" class="btn btn-primary" disabled><i class="fa-solid fa-plus"></i> Add New Dish</button>
+                            </div>
+                            <div id="admin-menu-grid" class="cards-grid">
+                                <p class="empty-text">Please select a restaurant to manage its menu.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -554,9 +598,40 @@
                             </label>
                         </div>
                     </div>
+                    <!-- UPI ID input (visible only when UPI is selected) -->
+                    <div id="upi-details-group" class="form-group hidden" style="margin-top: 15px;">
+                        <label for="upi-id-input"><i class="fa-solid fa-at"></i> Enter UPI ID</label>
+                        <input type="text" id="upi-id-input" placeholder="username@upi" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-color);">
+                        <p class="small-text" style="margin-top: 5px; color: var(--text-muted);">Please enter your valid virtual payment address (VPA) to process simulated payment.</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button id="place-order-confirm-btn" class="btn btn-primary btn-block btn-lg">Place Order</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Processing Modal -->
+        <div id="payment-modal" class="modal-wrapper hidden" style="z-index: 1100;">
+            <div class="modal-card" style="max-width: 450px; text-align: center; padding: 40px 30px;">
+                <div id="payment-loading-state">
+                    <div class="spinner" style="margin: 0 auto 25px auto; width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <h2 style="margin-bottom: 10px;">Authorizing Payment</h2>
+                    <p id="payment-loading-msg" class="small-text">Connecting to bank servers...</p>
+                </div>
+                <div id="payment-success-state" class="hidden">
+                    <div class="success-icon-wrapper" style="margin: 0 auto 25px auto; width: 80px; height: 80px; border-radius: 50%; background: rgba(0, 230, 118, 0.15); display: flex; align-items: center; justify-content: center; color: var(--success); font-size: 40px;">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h2 style="color: var(--success); margin-bottom: 10px;">Payment Successful!</h2>
+                    <p style="margin-bottom: 20px;">Your transaction has been processed.</p>
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; text-align: left; border: 1px solid var(--border-color);">
+                        <div><strong>Method:</strong> <span id="lbl-pay-method">-</span></div>
+                        <div id="lbl-upi-group" class="hidden"><strong>UPI ID:</strong> <span id="lbl-pay-upi">-</span></div>
+                        <div><strong>Amount:</strong> <span id="lbl-pay-amount">₹0.00</span></div>
+                        <div><strong>Txn ID:</strong> <span id="lbl-pay-txnid">-</span></div>
+                    </div>
+                    <p class="small-text" style="margin-top: 15px; color: var(--text-muted);">Completing checkout and redirecting to tracking...</p>
                 </div>
             </div>
         </div>
@@ -638,6 +713,51 @@
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Save Address</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Add/Edit Restaurant Modal -->
+        <div id="admin-restaurant-modal" class="modal-wrapper hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2 id="admin-rest-modal-title">Add Restaurant</h2>
+                    <button class="modal-close-btn" onclick="document.getElementById('admin-restaurant-modal').classList.add('hidden')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="admin-restaurant-form">
+                        <input type="hidden" id="admin-rest-id">
+                        <div class="form-group">
+                            <label>Restaurant Name</label>
+                            <input type="text" id="admin-rest-name" required placeholder="e.g. Imperial Feast">
+                        </div>
+                        <div class="form-group">
+                            <label>Owner Username</label>
+                            <input type="text" id="admin-rest-owner" required placeholder="e.g. owner123">
+                            <p class="small-text" style="color:var(--text-muted)">If owner user doesn't exist, we will create a default account (password: password123).</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="admin-rest-phone" required placeholder="e.g. 9876543210">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="admin-rest-address" required placeholder="e.g. 45, Broadway Street">
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL</label>
+                            <input type="text" id="admin-rest-image" placeholder="Image URL link...">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="admin-rest-desc" required placeholder="Describe specialty, cuisine types..."></textarea>
+                        </div>
+                        <div class="form-group row-align" id="admin-rest-approved-group">
+                            <input type="checkbox" id="admin-rest-approved" checked>
+                            <label for="admin-rest-approved">Approved (Active in search)</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Save Restaurant</button>
                     </form>
                 </div>
             </div>
